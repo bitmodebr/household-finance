@@ -1,0 +1,54 @@
+<!doctype html>
+{% load static %}
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FinanceMode | {% block title %}{{ title|default:"Início" }}{% endblock %}</title>
+    {% if bootstrap_css_url %}
+        <link rel="stylesheet" href="{{ bootstrap_css_url }}">
+    {% endif %}
+    <link rel="stylesheet" href="{% static 'finance/css/site.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <nav class="site-nav" aria-label="Navegação principal">
+            <a class="navbar-brand" href="/" aria-label="Modo Finanças — início">
+                <img src="{% static 'finance/imgs/fm_logo_base.png' %}" alt="Modo Finanças">
+            </a>
+            <button
+                class="nav-toggle"
+                type="button"
+                aria-label="Abrir menu"
+                aria-controls="main-navigation"
+                aria-expanded="false"
+            >
+                <span></span>
+            </button>
+            <div class="nav-links" id="main-navigation">
+                <a href="#sobre-nos">Sobre nós</a>
+                <a href="#como-funciona">Como funciona</a>
+                <a href="{% url 'register' %}">Cadastro</a>
+                <a href="{% url 'login' %}">Login</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container">
+        {% block footer %}
+            <p>&copy; {% now "Y" %} FinanceMode</p>
+        {% endblock %}
+    </footer>
+
+    {% if bootstrap_js_url %}
+        <script src="{{ bootstrap_js_url }}" defer></script>
+    {% endif %}
+    <script src="{% static 'finance/js/navigation.js' %}" defer></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
