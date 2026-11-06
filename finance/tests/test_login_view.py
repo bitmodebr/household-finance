@@ -29,7 +29,7 @@ class LoginViewTests(TestCase):
             {'email': 'MARIA@example.com', 'password': 'SecurePassword123!'},
         )
 
-        self.assertRedirects(response, reverse('home'))
+        self.assertRedirects(response, reverse('dashboard'))
         self.assertEqual(int(self.client.session['_auth_user_id']), self.user.pk)
 
     def test_invalid_credentials_do_not_log_in(self):

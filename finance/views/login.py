@@ -15,6 +15,6 @@ def login(request):
 
     if request.method == 'POST' and form.is_valid():
         auth_login(request, form.get_user())
-        return redirect('home')
+        return redirect('dashboard')
 
     return render(request, 'login.html', {'form': form, 'title': 'Login'})
