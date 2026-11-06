@@ -36,7 +36,6 @@ collectedstatic/
 
 # Secrets and local config
 .env
-.env.*
 *.local
 local_settings.py
 
