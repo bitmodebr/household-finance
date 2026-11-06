@@ -1,6 +1,7 @@
 import re
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -31,6 +32,14 @@ def validate_cpf(value):
 
     if digits[-2:] != f'{first_digit}{second_digit}':
         raise ValidationError(_('Enter a valid CPF.'), code='invalid_cpf')
+
+
+def validate_expense_date_not_future(value):
+    if value > timezone.localdate():
+        raise ValidationError(
+            _('A data do pagamento não pode ser posterior à data atual.'),
+            code='future_expense_date',
+        )
 
 
 class PasswordStrengthValidator:

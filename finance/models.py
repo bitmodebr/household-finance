@@ -9,7 +9,7 @@ from django.db.models.functions import Lower
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
-from finance.validators import validate_cpf
+from finance.validators import validate_cpf, validate_expense_date_not_future
 
 
 def expense_created_at():
@@ -118,13 +118,17 @@ class Expense(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
     )
-    occurred_on = models.DateField()
+    occurred_on = models.DateField(
+        validators=[validate_expense_date_not_future],
+        verbose_name='data do pagamento',
+    )
     created_at = models.DateTimeField(default=expense_created_at, editable=False)
     is_active = models.BooleanField(default=True)
     participants = models.ManyToManyField(
         User,
         blank=True,
         related_name='shared_expenses',
+        verbose_name='compartilhantes do pagamento',
     )
     objects = ExpenseQuerySet.as_manager()
 
