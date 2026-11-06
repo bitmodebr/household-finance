@@ -1,0 +1,12 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="login-heading d-flex flex-wrap justify-content-center align-items-baseline gap-2 gap-md-3">
+        <h1 id="login-title" class="h2 mb-0">Modo Finanças</h1>
+        <span aria-hidden="true">-</span>
+        <h2 class="h4 mb-0 text-secondary">O seu melhor investimento</h2>
+    </div>
+    <h3>Seja bem vindo(a), {{ user.first_name }}</h3>
+{% endblock %}

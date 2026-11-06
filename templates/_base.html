@@ -26,14 +26,58 @@
             >
                 <span></span>
             </button>
-            <div class="nav-links" id="main-navigation">
-                <a href="#sobre-nos">Sobre nós</a>
-                <a href="#como-funciona">Como funciona</a>
-                <a href="{% url 'register' %}">Cadastro</a>
-                <a href="{% url 'login' %}">Login</a>
-            </div>
+            {% if user.is_authenticated %}
+                {% include "partials/_navbar_logged.html" %}
+            {% else %}
+                {% include "partials/_navar_default.html" %}
+            {% endif %}
         </nav>
     </header>
+
+    {% if user.is_authenticated %}
+        <div
+            class="modal fade"
+            id="logoutConfirmation"
+            tabindex="-1"
+            aria-labelledby="logoutConfirmationLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="logoutConfirmationLabel">
+                            Confirmar logout
+                        </h2>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fechar"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        Tem certeza de que deseja sair da sua conta?
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            form="logout-form"
+                        >
+                            Sim, sair
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
     <main class="container">
         {% block content %}{% endblock %}
@@ -41,7 +85,7 @@
 
     <footer class="container">
         {% block footer %}
-            <p>&copy; {% now "Y" %} FinanceMode</p>
+            <p>&copy; {% now "Y" %} FinanceMode - BitMode</p>
         {% endblock %}
     </footer>
 

@@ -1,0 +1,17 @@
+<div class="nav-links" id="main-navigation">
+    <a href="#minhas-financas">Minhas finanças</a>
+    <a href="{% url 'add_payment' %}">Adicionar pagamento</a>
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#sobre-nos">Sobre nós</a>
+    <form id="logout-form" method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button
+            class="btn btn-outline-light rounded-pill fw-semibold"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#logoutConfirmation"
+        >
+            Logout
+        </button>
+    </form>
+</div>
