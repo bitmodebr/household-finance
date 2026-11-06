@@ -58,6 +58,10 @@ body {
     gap: 1.75rem;
 }
 
+.nav-links form {
+    margin: 0;
+}
+
 .nav-links a {
     position: relative;
     display: inline-block;
@@ -67,6 +71,7 @@ body {
     border-radius: 0;
     font-weight: 600;
     transition: font-size 0.7s ease;
+    text-decoration: none;
 }
 
 .nav-links a::after {
