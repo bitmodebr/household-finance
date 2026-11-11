@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from finance.models import Expense, User
+from finance.validators import validate_first_name, validate_person_name
 
 
 class UserProfileForm(forms.ModelForm):
@@ -135,11 +136,24 @@ class UserRegistrationForm(forms.Form):
     first_name = forms.CharField(
         label='Nome',
         max_length=150,
+        validators=[validate_first_name],
         widget=forms.TextInput(
             attrs={
                 'class': 'form-control',
                 'autocomplete': 'given-name',
                 'placeholder': 'Seu nome',
+            }
+        ),
+    )
+    last_name = forms.CharField(
+        label='Sobrenome',
+        max_length=150,
+        validators=[validate_person_name],
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'autocomplete': 'family-name',
+                'placeholder': 'Seus sobrenomes',
             }
         ),
     )
@@ -188,6 +202,7 @@ class UserRegistrationForm(forms.Form):
 
         user = User(
             first_name=self.cleaned_data.get('first_name', ''),
+            last_name=self.cleaned_data.get('last_name', ''),
             email=self.cleaned_data.get('email', ''),
         )
         validate_password(password2, user)
@@ -201,4 +216,5 @@ class UserRegistrationForm(forms.Form):
             email=self.cleaned_data['email'],
             password=self.cleaned_data['password1'],
             first_name=self.cleaned_data['first_name'],
+            last_name=self.cleaned_data['last_name'],
         )

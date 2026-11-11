@@ -1,8 +1,52 @@
 import re
+import unicodedata
 
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+
+def validate_person_name(value):
+    if not value:
+        return
+
+    for index, character in enumerate(value):
+        category = unicodedata.category(character)
+        if category.startswith('L'):
+            continue
+        if category.startswith('M'):
+            if index == 0 or not (
+                unicodedata.category(value[index - 1]).startswith(('L', 'M'))
+            ):
+                raise ValidationError(
+                    _('Use apenas letras e separadores comuns em nomes de pessoas.'),
+                    code='invalid_person_name',
+                )
+            continue
+        if character in " '-’":
+            previous_is_letter = (
+                index > 0
+                and unicodedata.category(value[index - 1]).startswith(('L', 'M'))
+            )
+            next_is_letter = (
+                index + 1 < len(value)
+                and unicodedata.category(value[index + 1]).startswith('L')
+            )
+            if previous_is_letter and next_is_letter:
+                continue
+        raise ValidationError(
+            _('Use apenas letras e separadores comuns em nomes de pessoas.'),
+            code='invalid_person_name',
+        )
+
+
+def validate_first_name(value):
+    validate_person_name(value)
+    if len(value.split()) > 2:
+        raise ValidationError(
+            _('Informe no máximo duas palavras no nome.'),
+            code='too_many_first_name_words',
+        )
 
 
 def validate_cpf(value):
