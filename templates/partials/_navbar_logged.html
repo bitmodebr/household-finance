@@ -3,15 +3,41 @@
     <a href="{% url 'add_payment' %}">Adicionar pagamento</a>
     <a href="#como-funciona">Como funciona</a>
     <a href="#sobre-nos">Sobre nós</a>
-    <form id="logout-form" method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button
-            class="btn btn-outline-light rounded-pill fw-semibold"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#logoutConfirmation"
+    {% if profile_page %}
+        <form id="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button
+                class="btn btn-outline-light rounded-pill fw-semibold"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#logoutConfirmation"
+            >
+                Sair
+            </button>
+        </form>
+    {% else %}
+        <a
+            class="profile-link btn btn-outline-light rounded-circle d-inline-flex align-items-center justify-content-center p-2"
+            href="{% url 'profile' %}"
+            aria-label="Meus dados"
+            title="Meus dados"
         >
-            Logout
-        </button>
-    </form>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M5 21a7 7 0 0 1 14 0"></path>
+            </svg>
+        </a>
+    {% endif %}
 </div>
