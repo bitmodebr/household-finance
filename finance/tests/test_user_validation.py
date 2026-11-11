@@ -83,7 +83,7 @@ class UserValidationTests(TestCase):
         self.create_user(username='AnaAb12')
 
         with patch(
-            'finance.models.get_random_string',
+            'finance.models.user_manager.get_random_string',
             side_effect=['Ab12', 'Bc23'],
         ):
             user = self.create_user(email='another@example.com', cpf='123.456.789-09')
