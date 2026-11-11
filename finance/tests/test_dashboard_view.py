@@ -61,14 +61,15 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Adicionar pagamento')
         self.assertContains(response, 'Como funciona')
         self.assertContains(response, 'Sobre nós')
-        self.assertContains(response, 'Logout')
+        self.assertContains(response, 'aria-label="Meus dados"')
         self.assertNotContains(response, '>Login<')
         self.assertNotContains(response, '>Cadastro<')
+        self.assertNotContains(response, 'data-bs-target="#logoutConfirmation"')
 
-    def test_logout_button_opens_confirmation_modal_instead_of_submitting(self):
+    def test_profile_logout_button_opens_confirmation_modal_instead_of_submitting(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse('dashboard'))
+        response = self.client.get(reverse('profile'))
 
         self.assertContains(response, 'data-bs-toggle="modal"')
         self.assertContains(response, 'data-bs-target="#logoutConfirmation"')
