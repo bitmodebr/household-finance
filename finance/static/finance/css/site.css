@@ -74,6 +74,11 @@ body {
     text-decoration: none;
 }
 
+.nav-links a.profile-link {
+    padding: 0.5rem;
+    border: 1px solid currentColor;
+}
+
 .nav-links a::after {
     position: absolute;
     right: 0.5rem;

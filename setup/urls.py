@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from finance.views import add_payment, dashboard, home, login, register
+from finance.views import add_payment, dashboard, home, login, profile, register
 
 urlpatterns = [
     path('', home, name='home'),
@@ -26,6 +26,7 @@ urlpatterns = [
     path('pagamentos/adicionar/', add_payment, name='add_payment'),
     path('login/', login, name='login'),
     path('cadastro/', register, name='register'),
+    path('perfil/', profile, name='profile'),
     path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
     path('admin/', admin.site.urls),
 ]
