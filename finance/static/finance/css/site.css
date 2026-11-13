@@ -200,6 +200,16 @@ footer.container {
     background-color: rgb(23 105 170 / 35%);
 }
 
+.table.dashboard-payments > tbody > tr.payment-payer > * {
+    background-color: #a3cfbb;
+    color: #0a3622;
+}
+
+.payment-payer {
+    background-color: #a3cfbb;
+    color: #0a3622;
+}
+
 @media (max-width: 767.98px) {
     .site-nav {
         padding: 0 1rem;

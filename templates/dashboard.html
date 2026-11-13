@@ -9,4 +9,71 @@
         <h2 class="h4 mb-0 text-secondary">O seu melhor investimento</h2>
     </div>
     <h3>Seja bem vindo(a){% if user.first_name %}, {{ user.first_name }}{% endif %}</h3>
+
+    <section class="mt-5" aria-labelledby="payments-title">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <h2 id="payments-title" class="h3 mb-0">Meus pagamentos</h2>
+            {% if payment_rows %}
+                <ul class="list-inline mb-0" aria-label="Legenda dos pagamentos">
+                    <li class="list-inline-item">
+                        <span class="badge payment-payer">Sou o pagante</span>
+                    </li>
+                    <li class="list-inline-item">
+                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Criado por mim</span>
+                    </li>
+                    <li class="list-inline-item">
+                        <span class="badge bg-warning text-dark">Sou participante</span>
+                    </li>
+                </ul>
+            {% endif %}
+        </div>
+
+        {% if payment_rows %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle dashboard-payments">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Criador do pagamento</th>
+                            <th scope="col">Pessoas associadas</th>
+                            <th scope="col">Data de criação</th>
+                            <th scope="col" class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in payment_rows %}
+                            <tr
+                                class="{{ row.row_class }}"
+                                data-payment-id="{{ row.expense.pk }}"
+                            >
+                                <td>
+                                    <a
+                                        href="/pagamentos/{{ row.expense.pk }}/editar/"
+                                        aria-label="Abrir edição do pagamento criado por {{ row.creator_name }}"
+                                    >
+                                        {{ row.creator_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% for person in row.people %}
+                                        <span class="d-block">{{ person }}</span>
+                                    {% endfor %}
+                                    {% if row.has_more_people %}
+                                        <span aria-label="Mais pessoas associadas">…</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ row.expense.created_at|date:"d/m/Y" }}</td>
+                                <td class="text-end text-nowrap">
+                                    R$ {{ row.expense.amount|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info mb-0" role="status">
+                Você ainda não possui pagamentos.
+            </div>
+        {% endif %}
+    </section>
 {% endblock %}
