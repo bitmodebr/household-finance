@@ -2,11 +2,12 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
 from finance.forms import ExpenseForm
-from finance.models import Expense, User
+from finance.models import Expense, PaymentMethod, User
 
 
 class AddPaymentViewTests(TestCase):
@@ -26,6 +27,9 @@ class AddPaymentViewTests(TestCase):
 
     def payment_data(self, **overrides):
         data = {
+            'title': 'Pagamento #42 - café / casa!',
+            'description': 'Refeição & café\n(50%!)',
+            'payment_method': PaymentMethod.PIX,
             'user': str(self.other_user.pk),
             'amount': '45.75',
             'occurred_on': '2026-11-05',
@@ -84,6 +88,9 @@ class AddPaymentViewTests(TestCase):
         self.assertRedirects(response, reverse('add_payment'))
         self.assertEqual(expense.creator, self.creator)
         self.assertEqual(expense.user, self.other_user)
+        self.assertEqual(expense.title, 'Pagamento #42 - café / casa!')
+        self.assertEqual(expense.description, 'Refeição & café\n(50%!)')
+        self.assertEqual(expense.payment_method, PaymentMethod.PIX)
         self.assertEqual(expense.amount, Decimal('45.75'))
         self.assertEqual(expense.occurred_on, date(2026, 11, 5))
         self.assertSetEqual(
@@ -113,6 +120,92 @@ class AddPaymentViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('amount', response.context['form'].errors)
+        self.assertFalse(Expense.objects.exists())
+
+    def test_title_is_required_and_description_is_optional(self):
+        self.client.force_login(self.creator)
+
+        response = self.client.post(
+            reverse('add_payment'),
+            self.payment_data(title='', description=''),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('title', response.context['form'].errors)
+        self.assertFalse(Expense.objects.exists())
+
+        response = self.client.post(
+            reverse('add_payment'),
+            self.payment_data(description=''),
+        )
+
+        self.assertRedirects(response, reverse('add_payment'))
+        self.assertEqual(Expense.objects.get().description, '')
+
+    def test_payment_form_orders_title_and_description_first(self):
+        form = ExpenseForm()
+
+        self.assertEqual(
+            list(form.fields)[:3],
+            ['title', 'description', 'payment_method'],
+        )
+        self.assertEqual(
+            [value for value, _ in form.fields['payment_method'].choices],
+            [
+                '',
+                'cartão de crédito',
+                'cartão de débito',
+                'pix',
+                'dinheiro',
+            ],
+        )
+
+    def test_payment_form_rejects_unsupported_payment_method(self):
+        self.client.force_login(self.creator)
+
+        response = self.client.post(
+            reverse('add_payment'),
+            self.payment_data(payment_method='boleto'),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('payment_method', response.context['form'].errors)
+        self.assertFalse(Expense.objects.exists())
+
+    def test_database_rejects_unsupported_payment_method(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Expense.objects.create(
+                    title='Pagamento',
+                    payment_method='boleto',
+                    creator=self.creator,
+                    user=self.other_user,
+                    amount=Decimal('45.75'),
+                    occurred_on=date(2026, 11, 5),
+                )
+
+    def test_superusers_are_not_available_as_payment_participants(self):
+        superuser = User.objects.create_superuser(
+            username='root',
+            email='root@example.com',
+            password='SecurePassword123!',
+        )
+        form = ExpenseForm()
+
+        self.assertNotIn(
+            superuser,
+            form.fields['participants'].queryset,
+        )
+        self.assertIn(superuser, form.fields['user'].queryset)
+
+        self.client.force_login(self.creator)
+        response = self.client.post(
+            reverse('add_payment'),
+            self.payment_data(participants=[str(superuser.pk)]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('participants', response.context['form'].errors)
         self.assertFalse(Expense.objects.exists())
 
     def test_inactive_users_cannot_be_selected_as_payer_or_participants(self):
@@ -171,6 +264,8 @@ class AddPaymentViewTests(TestCase):
                 'user': self.other_user.pk,
                 'amount': '45.75',
                 'occurred_on': '2026-11-07',
+                'title': 'Pagamento',
+                'payment_method': PaymentMethod.CASH,
                 'participants': [],
             }
         )

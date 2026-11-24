@@ -7,14 +7,30 @@ from finance.models import Expense, User
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
-        fields = ('user', 'amount', 'occurred_on', 'participants')
+        fields = (
+            'title',
+            'description',
+            'payment_method',
+            'user',
+            'amount',
+            'occurred_on',
+            'participants',
+        )
         labels = {
+            'title': 'Título',
+            'description': 'Descrição',
+            'payment_method': 'Forma de pagamento',
             'user': 'Pagamento lançado em nome de',
             'amount': 'Valor',
             'occurred_on': 'Data do pagamento',
             'participants': 'Compartilhantes do pagamento',
         }
         widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(
+                attrs={'class': 'form-control', 'rows': 3}
+            ),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
             'user': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(
                 attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}
@@ -34,7 +50,9 @@ class ExpenseForm(forms.ModelForm):
             'username',
         )
         self.fields['user'].queryset = active_users
-        self.fields['participants'].queryset = active_users
+        self.fields['participants'].queryset = active_users.filter(
+            is_superuser=False
+        )
         self.fields['participants'].required = False
         self.fields['participants'].help_text = (
             'Deixe vazio para compartilhar o pagamento entre todos os usuários ativos.'

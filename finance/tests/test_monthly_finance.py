@@ -20,6 +20,8 @@ class MonthlyFinanceTests(TestCase):
 
     def add_expense(self, user, amount, occurred_on, participants=None):
         expense = Expense.objects.create(
+            title='Pagamento',
+            payment_method='dinheiro',
             creator=user,
             user=user,
             amount=Decimal(amount),

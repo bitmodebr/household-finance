@@ -234,6 +234,8 @@ class DashboardViewTests(TestCase):
         is_active=True,
     ):
         expense = Expense.objects.create(
+            title='Pagamento',
+            payment_method='dinheiro',
             creator=creator,
             user=payer,
             amount=Decimal(amount),

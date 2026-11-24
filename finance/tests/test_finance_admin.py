@@ -24,6 +24,8 @@ class FinanceAdminTests(TestCase):
             password='StrongPass123!',
         )
         self.expense = Expense.objects.create(
+            title='Pagamento',
+            payment_method='dinheiro',
             creator=self.admin_user,
             user=self.user,
             amount=Decimal('25.00'),
@@ -76,6 +78,8 @@ class FinanceAdminTests(TestCase):
         response = self.client.post(
             reverse('admin:finance_expense_add'),
             {
+                'title': 'Pagamento no admin',
+                'payment_method': 'pix',
                 'user': self.user.pk,
                 'amount': '40.00',
                 'occurred_on': '2024-01-20',
@@ -116,6 +120,8 @@ class FinanceAdminTests(TestCase):
         response = self.client.post(
             reverse('admin:finance_expense_change', args=[self.expense.pk]),
             {
+                'title': 'Pagamento',
+                'payment_method': 'dinheiro',
                 'creator': self.user.pk,
                 'user': self.user.pk,
                 'amount': '25.00',

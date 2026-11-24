@@ -12,7 +12,20 @@ def expense_created_at():
     return timezone.now()
 
 
+class PaymentMethod(models.TextChoices):
+    CREDIT_CARD = 'cartão de crédito', 'cartão de crédito'
+    DEBIT_CARD = 'cartão de débito', 'cartão de débito'
+    PIX = 'pix', 'pix'
+    CASH = 'dinheiro', 'dinheiro'
+
+
 class Expense(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    payment_method = models.CharField(
+        max_length=30,
+        choices=PaymentMethod.choices,
+    )
     creator = models.ForeignKey(
         'finance.User',
         on_delete=models.PROTECT,
@@ -47,6 +60,12 @@ class Expense(models.Model):
             models.CheckConstraint(
                 condition=Q(amount__gte=0),
                 name='expense_amount_non_negative',
+            ),
+            models.CheckConstraint(
+                condition=Q(
+                    payment_method__in=[method.value for method in PaymentMethod]
+                ),
+                name='expense_payment_method_valid',
             ),
         ]
 
