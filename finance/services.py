@@ -26,6 +26,12 @@ class DailyUserAmounts:
 
 
 @dataclass(frozen=True)
+class UserPaymentSettlement:
+    expense: Expense
+    amount: Decimal
+
+
+@dataclass(frozen=True)
 class MonthlyFinanceResult:
     year: int
     month: int
@@ -113,6 +119,36 @@ class Finance:
             )
 
         return daily_amounts
+
+    def calculate_user_payment_settlements(self, user_id):
+        users = self._active_users()
+        user_ids = [user.pk for user in users]
+        if user_id not in user_ids:
+            return []
+
+        settlements = []
+        zero = Decimal('0.00')
+        for expense in self._month_expenses(user_ids):
+            participants = self._participants_for_expense(expense, users)
+            shares = self._shares_for_expense(expense, participants)
+            if not shares:
+                continue
+
+            is_payer = expense.user_id == user_id
+            if not is_payer and user_id not in shares:
+                continue
+
+            user_share = shares.get(user_id, zero)
+            settlements.append(
+                UserPaymentSettlement(
+                    expense=expense,
+                    amount=(
+                        user_share - expense.amount if is_payer else user_share
+                    ),
+                )
+            )
+
+        return settlements
 
     def _active_users(self):
         return list(

@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from django import forms
 from django.contrib.auth.decorators import login_required
@@ -51,29 +52,45 @@ def _parse_month(value):
         return None
 
 
-def _chart_payload(user_id, selected_month):
-    daily_amounts = Finance(
-        selected_month.year,
-        selected_month.month,
-    ).calculate_user_daily_amounts(user_id)
+def _monthly_finance_data(user_id, selected_month):
+    finance = Finance(selected_month.year, selected_month.month)
+    daily_amounts = finance.calculate_user_daily_amounts(user_id)
+    payment_rows = finance.calculate_user_payment_settlements(user_id)
+    settlement_total = sum(
+        (payment.amount for payment in payment_rows),
+        Decimal('0.00'),
+    )
     return {
-        'labels': [str(day.day) for day in daily_amounts],
-        'datasets': [
-            {
-                'label': 'Pago por mim',
-                'data': [float(amounts.paid) for amounts in daily_amounts.values()],
-                'backgroundColor': '#198754',
-                'borderColor': '#146c43',
-                'borderWidth': 1,
-            },
-            {
-                'label': 'Minha parte nos pagamentos',
-                'data': [float(amounts.share) for amounts in daily_amounts.values()],
-                'backgroundColor': '#dc3545',
-                'borderColor': '#b02a37',
-                'borderWidth': 1,
-            },
-        ],
+        'chart_payload': {
+            'labels': [str(day.day) for day in daily_amounts],
+            'datasets': [
+                {
+                    'label': 'Pago por mim',
+                    'data': [
+                        float(amounts.paid) for amounts in daily_amounts.values()
+                    ],
+                    'backgroundColor': '#198754',
+                    'borderColor': '#146c43',
+                    'borderWidth': 1,
+                },
+                {
+                    'label': 'Minha parte nos pagamentos',
+                    'data': [
+                        float(amounts.share) for amounts in daily_amounts.values()
+                    ],
+                    'backgroundColor': '#dc3545',
+                    'borderColor': '#b02a37',
+                    'borderWidth': 1,
+                },
+            ],
+        },
+        'payment_rows': payment_rows,
+        'settlement_state': (
+            'receive'
+            if settlement_total < 0
+            else 'pay' if settlement_total > 0 else 'balanced'
+        ),
+        'settlement_amount': abs(settlement_total),
     }
 
 
@@ -94,18 +111,18 @@ def my_finances(request):
     )
 
     selected_month = current_month
-    chart_payload = None
+    finance_data = None
     filter_message = None
     if is_future_month:
         filter_message = (
             'Não é possível selecionar um mês futuro. '
             'Exibindo os dados do mês atual.'
         )
-        chart_payload = _chart_payload(request.user.pk, selected_month)
+        finance_data = _monthly_finance_data(request.user.pk, selected_month)
     elif not has_month_filter or form.is_valid():
         if has_month_filter:
             selected_month = form.cleaned_data['month']
-        chart_payload = _chart_payload(request.user.pk, selected_month)
+        finance_data = _monthly_finance_data(request.user.pk, selected_month)
 
     return render(
         request,
@@ -114,7 +131,16 @@ def my_finances(request):
             'title': 'Minhas Finanças',
             'form': form,
             'selected_month': selected_month,
-            'chart_payload': chart_payload,
             'filter_message': filter_message,
+            **(
+                finance_data
+                if finance_data is not None
+                else {
+                    'chart_payload': None,
+                    'payment_rows': [],
+                    'settlement_state': 'balanced',
+                    'settlement_amount': Decimal('0.00'),
+                }
+            ),
         },
     )

@@ -28,13 +28,14 @@ class MyFinancesViewTests(TestCase):
         payer,
         amount,
         occurred_on,
+        creator=None,
         participants=(),
         is_active=True,
     ):
         expense = Expense.objects.create(
             title='Pagamento',
             payment_method='pix',
-            creator=payer,
+            creator=creator or payer,
             user=payer,
             amount=Decimal(amount),
             occurred_on=occurred_on,
@@ -143,6 +144,88 @@ class MyFinancesViewTests(TestCase):
         self.assertEqual(paid_amounts[6], 0.0)
         self.assertNotContains(response, '900.00')
         self.assertNotContains(response, '500.00')
+
+    def test_payment_table_and_summary_show_net_monthly_settlements(self):
+        paid_payment = self.create_expense(
+            payer=self.user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 3),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        shared_payment = self.create_expense(
+            payer=self.other_user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 5),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.create_expense(
+            creator=self.user,
+            payer=self.other_user,
+            amount='90.00',
+            occurred_on=date(2026, 8, 7),
+            participants=[self.other_user, self.third_user],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('my_finances'),
+            {'month': '2026-08'},
+        )
+
+        rows = response.context['payment_rows']
+        self.assertEqual(
+            [(row.expense.pk, row.amount) for row in rows],
+            [
+                (paid_payment.pk, Decimal('-200.00')),
+                (shared_payment.pk, Decimal('100.00')),
+            ],
+        )
+        self.assertEqual(
+            response.context['settlement_state'],
+            'receive',
+        )
+        self.assertEqual(
+            response.context['settlement_amount'],
+            Decimal('100.00'),
+        )
+        self.assertContains(response, 'Pagamento total')
+        self.assertContains(response, 'Criador')
+        self.assertContains(response, 'Data da compra')
+        self.assertContains(response, 'Valor a ser pago')
+        self.assertContains(
+            response,
+            '<span class="text-success">R$ 100,00</span>',
+            html=True,
+        )
+
+    def test_positive_monthly_settlement_uses_payment_wording_and_red_value(self):
+        self.create_expense(
+            payer=self.other_user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 5),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('my_finances'),
+            {'month': '2026-08'},
+        )
+
+        self.assertEqual(
+            response.context['settlement_state'],
+            'pay',
+        )
+        self.assertEqual(
+            response.context['settlement_amount'],
+            Decimal('100.00'),
+        )
+        self.assertContains(
+            response,
+            '<span class="text-danger">R$ 100,00</span>',
+            html=True,
+        )
+        self.assertContains(response, 'Você deve pagar esse mês:')
 
     def test_invalid_month_filter_shows_validation_error_without_a_chart(self):
         self.client.force_login(self.user)

@@ -44,8 +44,58 @@
                 </div>
                 {{ chart_payload|json_script:"daily-finance-chart-data" }}
             </section>
+
+            <section class="mt-4" aria-labelledby="total-payments-title">
+                <h2 id="total-payments-title" class="h4">Pagamento total</h2>
+                {% if payment_rows %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle dashboard-payments">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Título</th>
+                                    <th scope="col">Criador</th>
+                                    <th scope="col">Data da compra</th>
+                                    <th scope="col" class="text-end">Valor a ser pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in payment_rows %}
+                                    <tr>
+                                        <td>{{ row.expense.title }}</td>
+                                        <td>{{ row.expense.creator.username }}</td>
+                                        <td>{{ row.expense.occurred_on|date:"d/m/Y" }}</td>
+                                        <td class="text-end text-nowrap">
+                                            R$ {{ row.amount|floatformat:2 }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0" role="status">
+                        Não há pagamentos associados neste mês.
+                    </div>
+                {% endif %}
+            </section>
         {% endif %}
     </section>
+
+    <section class="mt-4" aria-label="Resumo dos pagamentos do mês">
+        <h2 class="h5 fw-bold">
+            {% if settlement_state == 'receive' %}
+                Você deve receber esse mês:
+                <span class="text-success">R$ {{ settlement_amount|floatformat:2 }}</span>
+            {% elif settlement_state == 'pay' %}
+                Você deve pagar esse mês:
+                <span class="text-danger">R$ {{ settlement_amount|floatformat:2 }}</span>
+            {% else %}
+                Sem valores a pagar ou receber esse mês:
+                <span>R$ {{ settlement_amount|floatformat:2 }}</span>
+            {% endif %}
+        </h2>
+    </section>
+
 {% endblock %}
 
 {% block extra_scripts %}
