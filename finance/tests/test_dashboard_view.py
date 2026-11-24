@@ -201,11 +201,11 @@ class DashboardViewTests(TestCase):
         self.assertTrue(row['has_more_people'])
         self.assertContains(response, 'Ana')
         self.assertContains(response, 'Bia')
-        self.assertNotContains(response, 'Caio')
+        self.assertContains(response, '<li>Caio</li>', html=True)
         self.assertContains(response, 'Mais pessoas associadas')
         self.assertContains(response, 'R$ 45,75')
 
-    def test_payment_row_links_to_future_edit_path_without_adding_an_edit_route(self):
+    def test_creator_username_is_not_an_edit_link_but_edit_icon_has_future_path(self):
         expense = self.create_payment(
             creator=self.user,
             payer=self.user,
@@ -217,11 +217,100 @@ class DashboardViewTests(TestCase):
 
         self.assertContains(
             response,
+            f'<td>{self.user.username}</td>',
+            html=True,
+        )
+        self.assertContains(
+            response,
             f'href="/pagamentos/{expense.pk}/editar/"',
+        )
+        self.assertContains(
+            response,
+            f'aria-label="Editar pagamento {expense.title}"',
         )
         self.assertEqual(
             self.client.get(f'/pagamentos/{expense.pk}/editar/').status_code,
             404,
+        )
+
+    def test_each_payment_has_its_own_details_modal_and_plus_icon(self):
+        creator = User.objects.create_user(
+            username='bia',
+            email='bia@example.com',
+            password='SecurePassword123!',
+            first_name='Bia',
+        )
+        first_payment = self.create_payment(
+            creator=self.user,
+            payer=self.user,
+            amount='12.50',
+            title='Conta de luz',
+            description='Fatura de novembro',
+            payment_method='pix',
+        )
+        second_payment = self.create_payment(
+            creator=creator,
+            payer=self.user,
+            amount='24.00',
+            title='Compra no mercado',
+            description='Compras da semana',
+            payment_method='dinheiro',
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        for expense in (first_payment, second_payment):
+            self.assertContains(
+                response,
+                f'data-bs-target="#paymentDetails-{expense.pk}"',
+            )
+            self.assertContains(
+                response,
+                f'id="paymentDetails-{expense.pk}"',
+            )
+            self.assertContains(response, expense.title)
+            self.assertContains(response, expense.description)
+        self.assertEqual(
+            response.content.decode().count('payment-details-trigger'),
+            2,
+        )
+        self.assertContains(response, 'bi-plus-square')
+        self.assertContains(response, 'width="16"')
+        self.assertContains(response, 'height="16"')
+
+    def test_edit_icon_is_only_shown_for_payments_created_by_logged_in_user(self):
+        creator = User.objects.create_user(
+            username='bia',
+            email='bia@example.com',
+            password='SecurePassword123!',
+            first_name='Bia',
+        )
+        own_payment = self.create_payment(
+            creator=self.user,
+            payer=self.user,
+            amount='12.50',
+        )
+        other_payment = self.create_payment(
+            creator=creator,
+            payer=self.user,
+            amount='24.00',
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertContains(
+            response,
+            f'href="/pagamentos/{own_payment.pk}/editar/"',
+        )
+        self.assertNotContains(
+            response,
+            f'href="/pagamentos/{other_payment.pk}/editar/"',
+        )
+        self.assertEqual(
+            response.content.decode().count('bi-pencil-square'),
+            1,
         )
 
     def create_payment(
@@ -230,12 +319,16 @@ class DashboardViewTests(TestCase):
         creator,
         payer,
         amount,
+        title='Pagamento',
+        description='',
+        payment_method='dinheiro',
         participants=(),
         is_active=True,
     ):
         expense = Expense.objects.create(
-            title='Pagamento',
-            payment_method='dinheiro',
+            title=title,
+            description=description,
+            payment_method=payment_method,
             creator=creator,
             user=payer,
             amount=Decimal(amount),

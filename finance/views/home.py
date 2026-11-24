@@ -63,9 +63,13 @@ def dashboard(request):
                 'expense': payment,
                 'creator_name': payment.creator.get_username()
                 or payment.creator.get_full_name(),
+                'payer_name': payment.user.first_name
+                or payment.user.get_username(),
                 'people': associated_names[:2],
+                'associated_people': associated_names,
                 'has_more_people': len(associated_names) > 2,
                 'row_class': row_class,
+                'is_creator': payment.creator_id == request.user.pk,
             }
         )
 

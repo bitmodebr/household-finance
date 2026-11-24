@@ -37,6 +37,7 @@
                             <th scope="col">Pessoas associadas</th>
                             <th scope="col">Data de criação</th>
                             <th scope="col" class="text-end">Valor</th>
+                            <th scope="col" class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -45,14 +46,7 @@
                                 class="{{ row.row_class }}"
                                 data-payment-id="{{ row.expense.pk }}"
                             >
-                                <td>
-                                    <a
-                                        href="/pagamentos/{{ row.expense.pk }}/editar/"
-                                        aria-label="Abrir edição do pagamento criado por {{ row.creator_name }}"
-                                    >
-                                        {{ row.creator_name }}
-                                    </a>
-                                </td>
+                                <td>{{ row.creator_name }}</td>
                                 <td>
                                     {% for person in row.people %}
                                         <span class="d-block">{{ person }}</span>
@@ -65,11 +59,121 @@
                                 <td class="text-end text-nowrap">
                                     R$ {{ row.expense.amount|floatformat:2 }}
                                 </td>
+                                <td class="text-center text-nowrap">
+                                    <button
+                                        class="btn btn-link payment-row-action payment-details-trigger"
+                                        type="button"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#paymentDetails-{{ row.expense.pk }}"
+                                        aria-label="Ver detalhes do pagamento {{ row.expense.title }}"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="16"
+                                            height="16"
+                                            fill="currentColor"
+                                            class="bi bi-plus-square payment-action-icon"
+                                            viewBox="0 0 16 16"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                                        </svg>
+                                    </button>
+                                    {% if row.is_creator %}
+                                        <a
+                                            class="btn btn-link payment-row-action payment-edit-link"
+                                            href="/pagamentos/{{ row.expense.pk }}/editar/"
+                                            aria-label="Editar pagamento {{ row.expense.title }}"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                fill="currentColor"
+                                                class="bi bi-pencil-square payment-action-icon"
+                                                viewBox="0 0 16 16"
+                                                aria-hidden="true"
+                                                focusable="false"
+                                            >
+                                                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% for row in payment_rows %}
+                <div
+                    class="modal fade"
+                    id="paymentDetails-{{ row.expense.pk }}"
+                    tabindex="-1"
+                    aria-labelledby="paymentDetailsLabel-{{ row.expense.pk }}"
+                    aria-hidden="true"
+                >
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2
+                                    class="modal-title fs-5"
+                                    id="paymentDetailsLabel-{{ row.expense.pk }}"
+                                >
+                                    {{ row.expense.title }}
+                                </h2>
+                                <button
+                                    type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Fechar"
+                                ></button>
+                            </div>
+                            <div class="modal-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-5">Descrição</dt>
+                                    <dd class="col-sm-7 payment-description">
+                                        {% if row.expense.description %}
+                                            {{ row.expense.description }}
+                                        {% else %}
+                                            Não informada
+                                        {% endif %}
+                                    </dd>
+                                    <dt class="col-sm-5">Forma de pagamento</dt>
+                                    <dd class="col-sm-7">{{ row.expense.payment_method }}</dd>
+                                    <dt class="col-sm-5">Criado por</dt>
+                                    <dd class="col-sm-7">{{ row.creator_name }}</dd>
+                                    <dt class="col-sm-5">Pagante</dt>
+                                    <dd class="col-sm-7">{{ row.payer_name }}</dd>
+                                    <dt class="col-sm-5">Data do pagamento</dt>
+                                    <dd class="col-sm-7">
+                                        {{ row.expense.occurred_on|date:"d/m/Y" }}
+                                    </dd>
+                                    <dt class="col-sm-5">Data de criação</dt>
+                                    <dd class="col-sm-7">
+                                        {{ row.expense.created_at|date:"d/m/Y" }}
+                                    </dd>
+                                    <dt class="col-sm-5">Valor</dt>
+                                    <dd class="col-sm-7">
+                                        R$ {{ row.expense.amount|floatformat:2 }}
+                                    </dd>
+                                    <dt class="col-sm-5">Pessoas associadas</dt>
+                                    <dd class="col-sm-7">
+                                        <ul class="list-unstyled mb-0">
+                                            {% for person in row.associated_people %}
+                                                <li>{{ person }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         {% else %}
             <div class="alert alert-info mb-0" role="status">
                 Você ainda não possui pagamentos.
