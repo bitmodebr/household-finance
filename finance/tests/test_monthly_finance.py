@@ -150,15 +150,18 @@ class MonthlyFinanceTests(TestCase):
     def test_expense_creation_records_timestamp_in_sao_paulo_timezone(self, mocked_now):
         expense = self.add_expense(self.ana, '10.00', '2024-01-15')
         created_at = timezone.localtime(expense.created_at)
+        updated_at = timezone.localtime(expense.updated_at)
 
         self.assertTrue(timezone.is_aware(expense.created_at))
+        self.assertEqual(expense.updated_at, expense.created_at)
         self.assertEqual(created_at.year, 2024)
         self.assertEqual(created_at.month, 1)
         self.assertEqual(created_at.day, 15)
         self.assertEqual(created_at.hour, 11)
         self.assertEqual(created_at.minute, 32)
         self.assertEqual(created_at.second, 45)
-        mocked_now.assert_called_once()
+        self.assertEqual(updated_at, created_at)
+        mocked_now.assert_called()
 
     def test_expense_is_active_by_default(self):
         expense = self.add_expense(self.ana, '10.00', '2024-01-15')

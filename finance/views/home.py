@@ -70,6 +70,7 @@ def dashboard(request):
                 'has_more_people': len(associated_names) > 2,
                 'row_class': row_class,
                 'is_creator': payment.creator_id == request.user.pk,
+                'was_updated': payment.updated_at != payment.created_at,
             }
         )
 

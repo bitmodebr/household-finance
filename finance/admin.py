@@ -43,6 +43,19 @@ class ExpenseAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'creator')
     date_hierarchy = 'occurred_on'
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(creator=request.user)
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.creator_id != request.user.pk:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.creator_id != request.user.pk:
+            return False
+        return super().has_delete_permission(request, obj)
+
     def save_model(self, request, obj, form, change):
         if not change:
             obj.creator = request.user

@@ -1,8 +1,10 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from finance.models import Expense, User
 
@@ -205,7 +207,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Mais pessoas associadas')
         self.assertContains(response, 'R$ 45,75')
 
-    def test_creator_username_is_not_an_edit_link_but_edit_icon_has_future_path(self):
+    def test_creator_username_is_not_an_edit_link_but_edit_icon_opens_edit_page(self):
         expense = self.create_payment(
             creator=self.user,
             payer=self.user,
@@ -229,8 +231,51 @@ class DashboardViewTests(TestCase):
             f'aria-label="Editar pagamento {expense.title}"',
         )
         self.assertEqual(
-            self.client.get(f'/pagamentos/{expense.pk}/editar/').status_code,
-            404,
+            self.client.get(reverse('edit_payment', args=[expense.pk])).status_code,
+            200,
+        )
+
+    def test_dashboard_shows_update_date_and_full_timestamp_in_details(self):
+        created_at = timezone.make_aware(datetime(2026, 11, 24, 10, 0))
+        updated_at = timezone.make_aware(
+            datetime(2026, 11, 24, 14, 30),
+        )
+        with patch('django.utils.timezone.now', return_value=created_at):
+            expense = self.create_payment(
+                creator=self.user,
+                payer=self.user,
+                amount='12.50',
+            )
+        with patch('django.utils.timezone.now', return_value=updated_at):
+            expense.title = 'Pagamento atualizado'
+            expense.save()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertContains(response, 'Atualizado em')
+        self.assertContains(response, '<td>24/11/2026</td>', html=True)
+        self.assertContains(response, '24/11/2026 14:30')
+        row = response.context['payment_rows'][0]
+        self.assertTrue(row['was_updated'])
+
+    def test_dashboard_shows_dash_when_payment_has_not_been_updated(self):
+        expense = self.create_payment(
+            creator=self.user,
+            payer=self.user,
+            amount='12.50',
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        row = response.context['payment_rows'][0]
+        self.assertEqual(expense.created_at, expense.updated_at)
+        self.assertFalse(row['was_updated'])
+        self.assertRegex(response.content.decode(), r'<td>\s*-\s*</td>')
+        self.assertRegex(
+            response.content.decode(),
+            r'<dd class="col-sm-7">\s*-\s*</dd>',
         )
 
     def test_each_payment_has_its_own_details_modal_and_plus_icon(self):

@@ -136,6 +136,49 @@ class FinanceAdminTests(TestCase):
         self.expense.refresh_from_db()
         self.assertEqual(self.expense.creator, self.admin_user)
 
+    def test_admin_cannot_change_or_delete_another_users_expense(self):
+        other_expense = Expense.objects.create(
+            title='Pagamento de outra pessoa',
+            payment_method='pix',
+            creator=self.user,
+            user=self.user,
+            amount=Decimal('55.00'),
+            occurred_on=date(2024, 1, 16),
+        )
+
+        change_url = reverse(
+            'admin:finance_expense_change',
+            args=[other_expense.pk],
+        )
+        change_response = self.client.post(
+            change_url,
+            {
+                'title': 'Alteração não autorizada',
+                'payment_method': 'dinheiro',
+                'creator': self.admin_user.pk,
+                'user': self.user.pk,
+                'amount': '1.00',
+                'occurred_on': '2024-01-16',
+                'is_active': 'on',
+                'participants': [],
+                '_save': 'Save',
+            },
+        )
+        self.assertNotEqual(change_response.status_code, 200)
+
+        delete_response = self.client.post(
+            reverse(
+                'admin:finance_expense_delete',
+                args=[other_expense.pk],
+            ),
+            {'post': 'yes'},
+        )
+        self.assertNotEqual(delete_response.status_code, 200)
+        other_expense.refresh_from_db()
+        self.assertEqual(other_expense.title, 'Pagamento de outra pessoa')
+        self.assertEqual(other_expense.amount, Decimal('55.00'))
+        self.assertTrue(other_expense.is_active)
+
     def test_admin_delete_keeps_expense_and_marks_it_inactive(self):
         response = self.client.post(
             reverse('admin:finance_expense_delete', args=[self.expense.pk]),

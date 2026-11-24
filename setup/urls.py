@@ -21,6 +21,7 @@ from django.urls import path
 from finance.views import (
     add_payment,
     dashboard,
+    edit_payment,
     home,
     login,
     my_finances,
@@ -33,6 +34,11 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     path('minhas-financas/', my_finances, name='my_finances'),
     path('pagamentos/adicionar/', add_payment, name='add_payment'),
+    path(
+        'pagamentos/<int:expense_id>/editar/',
+        edit_payment,
+        name='edit_payment',
+    ),
     path('login/', login, name='login'),
     path('cadastro/', register, name='register'),
     path('perfil/', profile, name='profile'),

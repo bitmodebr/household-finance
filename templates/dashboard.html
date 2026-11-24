@@ -36,6 +36,7 @@
                             <th scope="col">Criador do pagamento</th>
                             <th scope="col">Pessoas associadas</th>
                             <th scope="col">Data de criação</th>
+                            <th scope="col">Atualizado em</th>
                             <th scope="col" class="text-end">Valor</th>
                             <th scope="col" class="text-center">Ações</th>
                         </tr>
@@ -56,6 +57,13 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ row.expense.created_at|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if row.was_updated %}
+                                        {{ row.expense.updated_at|date:"d/m/Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td class="text-end text-nowrap">
                                     R$ {{ row.expense.amount|floatformat:2 }}
                                 </td>
@@ -84,7 +92,7 @@
                                     {% if row.is_creator %}
                                         <a
                                             class="btn btn-link payment-row-action payment-edit-link"
-                                            href="/pagamentos/{{ row.expense.pk }}/editar/"
+                                            href="{% url 'edit_payment' row.expense.pk %}"
                                             aria-label="Editar pagamento {{ row.expense.title }}"
                                         >
                                             <svg
@@ -155,6 +163,14 @@
                                     <dt class="col-sm-5">Data de criação</dt>
                                     <dd class="col-sm-7">
                                         {{ row.expense.created_at|date:"d/m/Y" }}
+                                    </dd>
+                                    <dt class="col-sm-5">Atualizado em</dt>
+                                    <dd class="col-sm-7">
+                                        {% if row.was_updated %}
+                                            {{ row.expense.updated_at|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
                                     </dd>
                                     <dt class="col-sm-5">Valor</dt>
                                     <dd class="col-sm-7">

@@ -46,6 +46,10 @@ class Expense(models.Model):
         verbose_name='data do pagamento',
     )
     created_at = models.DateTimeField(default=expense_created_at, editable=False)
+    updated_at = models.DateTimeField(
+        default=expense_created_at,
+        editable=False,
+    )
     is_active = models.BooleanField(default=True)
     participants = models.ManyToManyField(
         'finance.User',
@@ -73,6 +77,7 @@ class Expense(models.Model):
         return f'{self.user}: {self.amount} on {self.occurred_on}'
 
     def save(self, *args, **kwargs):
+        original_creator_id = None
         if self.pk:
             original_creator_id = (
                 type(self).objects.using(kwargs.get('using')).filter(pk=self.pk)
@@ -84,6 +89,13 @@ class Expense(models.Model):
                 and original_creator_id != self.creator_id
             ):
                 raise ValidationError('The creator of an expense cannot be changed.')
+        if original_creator_id is None:
+            self.updated_at = self.created_at
+        else:
+            self.updated_at = timezone.now()
+            update_fields = kwargs.get('update_fields')
+            if update_fields:
+                kwargs['update_fields'] = set(update_fields) | {'updated_at'}
         return super().save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
