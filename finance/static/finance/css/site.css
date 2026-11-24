@@ -225,6 +225,12 @@ footer.container {
     overflow-wrap: anywhere;
 }
 
+.finance-chart-container {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+}
+
 @media (max-width: 767.98px) {
     .site-nav {
         padding: 0 1rem;

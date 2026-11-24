@@ -344,6 +344,7 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertContains(response, 'Minhas finanças')
+        self.assertContains(response, f'href="{reverse("my_finances")}"')
         self.assertContains(response, 'Adicionar pagamento')
         self.assertContains(response, 'Como funciona')
         self.assertContains(response, 'Sobre nós')

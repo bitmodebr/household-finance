@@ -94,6 +94,32 @@ class MonthlyFinanceTests(TestCase):
             Decimal('0.00'),
         )
 
+    def test_calculates_paid_and_shared_amounts_per_day(self):
+        self.add_expense(
+            self.ana,
+            '200.00',
+            '2024-01-03',
+            participants=[self.bia, self.caio],
+        )
+        self.add_expense(
+            self.bia,
+            '300.00',
+            '2024-01-05',
+            participants=[self.ana, self.bia, self.caio],
+        )
+        self.add_expense(self.ana, '12.00', '2024-01-06')
+
+        result = Finance(2024, 1).calculate_user_daily_amounts(self.ana.pk)
+
+        self.assertEqual(result[date(2024, 1, 3)].paid, Decimal('200.00'))
+        self.assertEqual(result[date(2024, 1, 3)].share, Decimal('0.00'))
+        self.assertEqual(result[date(2024, 1, 5)].paid, Decimal('0.00'))
+        self.assertEqual(result[date(2024, 1, 5)].share, Decimal('100.00'))
+        self.assertEqual(result[date(2024, 1, 6)].paid, Decimal('12.00'))
+        self.assertEqual(result[date(2024, 1, 6)].share, Decimal('4.00'))
+        self.assertEqual(result[date(2024, 1, 7)].paid, Decimal('0.00'))
+        self.assertEqual(result[date(2024, 1, 7)].share, Decimal('0.00'))
+
     def test_february_uses_the_last_calendar_day_in_a_leap_year(self):
         self.add_expense(self.ana, '10.00', '2024-02-29')
         self.add_expense(self.bia, '100.00', '2024-03-01')
