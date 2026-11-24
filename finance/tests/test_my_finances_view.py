@@ -227,6 +227,91 @@ class MyFinancesViewTests(TestCase):
         )
         self.assertContains(response, 'Você deve pagar esse mês:')
 
+    def test_payment_details_net_all_expenses_per_connected_user(self):
+        davi = self.create_user('davi')
+        self.create_expense(
+            payer=self.user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 3),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.create_expense(
+            payer=self.other_user,
+            amount='600.00',
+            occurred_on=date(2026, 8, 5),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.create_expense(
+            payer=self.other_user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 6),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.create_expense(
+            creator=self.user,
+            payer=davi,
+            amount='90.00',
+            occurred_on=date(2026, 8, 7),
+            participants=[davi, self.third_user],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('my_finances'),
+            {'month': '2026-08'},
+        )
+
+        rows = response.context['counterparty_rows']
+        self.assertEqual(
+            [(row['name'], row['balance']) for row in rows],
+            [
+                ('Bia', Decimal('-200.00')),
+                ('Caio', Decimal('100.00')),
+            ],
+        )
+        self.assertContains(response, 'Detalhes dos pagamentos')
+        self.assertContains(
+            response,
+            'Você deve pagar <span class="text-danger">R$ 200,00</span> à Bia',
+            html=True,
+        )
+        self.assertContains(
+            response,
+            'Você deve receber <span class="text-success">R$ 100,00</span> de Caio',
+            html=True,
+        )
+        self.assertNotContains(response, 'Davi')
+        self.assertContains(response, 'counterparty-balances-table')
+
+    def test_connected_user_with_zero_net_balance_is_still_listed(self):
+        self.create_expense(
+            payer=self.user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 3),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.create_expense(
+            payer=self.other_user,
+            amount='300.00',
+            occurred_on=date(2026, 8, 5),
+            participants=[self.user, self.other_user, self.third_user],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('my_finances'),
+            {'month': '2026-08'},
+        )
+
+        rows = response.context['counterparty_rows']
+        self.assertEqual(len(rows), 2)
+        bia_row = next(row for row in rows if row['name'] == 'Bia')
+        self.assertEqual(bia_row['balance'], Decimal('0.00'))
+        self.assertRegex(
+            response.content.decode(),
+            r'Você não tem valores pendentes com\s+Bia',
+        )
+
     def test_invalid_month_filter_shows_validation_error_without_a_chart(self):
         self.client.force_login(self.user)
 

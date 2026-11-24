@@ -7,6 +7,10 @@ usa Django e Postgres, com interface em português e horário padrão de
 ## Ideias básicas
 
 - Cadastro e autenticação de usuários por e-mail.
+- Validação de nomes no cadastro: primeiro nome com até duas palavras e
+  sobrenomes sem limite de palavras até 150 caracteres.
+- Área pessoal para visualizar e atualizar nome, sobrenome, nome de usuário,
+  e-mail e CPF.
 - Dashboard e páginas restritas a usuários autenticados.
 - Registro de pagamentos em nome de um usuário, com identificação de
   quem criou o gasto.

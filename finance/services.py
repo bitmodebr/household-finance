@@ -32,6 +32,12 @@ class UserPaymentSettlement:
 
 
 @dataclass(frozen=True)
+class UserCounterpartyBalance:
+    user: User
+    balance: Decimal
+
+
+@dataclass(frozen=True)
 class MonthlyFinanceResult:
     year: int
     month: int
@@ -149,6 +155,53 @@ class Finance:
             )
 
         return settlements
+
+    def calculate_user_counterparty_balances(self, user_id):
+        users = self._active_users()
+        user_ids = [user.pk for user in users]
+        if user_id not in user_ids:
+            return []
+
+        users_by_id = {user.pk: user for user in users}
+        balances = {}
+        connected_user_ids = set()
+        zero = Decimal('0.00')
+
+        for expense in self._month_expenses(user_ids):
+            participants = self._participants_for_expense(expense, users)
+            shares = self._shares_for_expense(expense, participants)
+            if not shares:
+                continue
+
+            if expense.user_id == user_id:
+                for participant_id, share in shares.items():
+                    if participant_id == user_id:
+                        continue
+                    connected_user_ids.add(participant_id)
+                    balances[participant_id] = (
+                        balances.get(participant_id, zero) + share
+                    )
+            elif user_id in shares:
+                payer_id = expense.user_id
+                connected_user_ids.add(payer_id)
+                balances[payer_id] = (
+                    balances.get(payer_id, zero) - shares[user_id]
+                )
+
+        return [
+            UserCounterpartyBalance(
+                user=users_by_id[counterparty_id],
+                balance=balances.get(counterparty_id, zero),
+            )
+            for counterparty_id in sorted(
+                connected_user_ids,
+                key=lambda user_id: (
+                    users_by_id[user_id].first_name.casefold(),
+                    users_by_id[user_id].get_username().casefold(),
+                    user_id,
+                ),
+            )
+        ]
 
     def _active_users(self):
         return list(

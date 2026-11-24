@@ -56,6 +56,15 @@ def _monthly_finance_data(user_id, selected_month):
     finance = Finance(selected_month.year, selected_month.month)
     daily_amounts = finance.calculate_user_daily_amounts(user_id)
     payment_rows = finance.calculate_user_payment_settlements(user_id)
+    counterparty_rows = [
+        {
+            'user': balance.user,
+            'name': balance.user.first_name or balance.user.get_username(),
+            'balance': balance.balance,
+            'amount': abs(balance.balance),
+        }
+        for balance in finance.calculate_user_counterparty_balances(user_id)
+    ]
     settlement_total = sum(
         (payment.amount for payment in payment_rows),
         Decimal('0.00'),
@@ -85,6 +94,7 @@ def _monthly_finance_data(user_id, selected_month):
             ],
         },
         'payment_rows': payment_rows,
+        'counterparty_rows': counterparty_rows,
         'settlement_state': (
             'receive'
             if settlement_total < 0
@@ -138,6 +148,7 @@ def my_finances(request):
                 else {
                     'chart_payload': None,
                     'payment_rows': [],
+                    'counterparty_rows': [],
                     'settlement_state': 'balanced',
                     'settlement_amount': Decimal('0.00'),
                 }

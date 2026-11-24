@@ -78,6 +78,47 @@
                     </div>
                 {% endif %}
             </section>
+
+            <section class="mt-4" aria-labelledby="payment-details-title">
+                <h2 id="payment-details-title" class="h4">Detalhes dos pagamentos</h2>
+                {% if counterparty_rows %}
+                    <div class="table-responsive">
+                        <table
+                            class="table table-hover align-middle dashboard-payments counterparty-balances-table"
+                            aria-label="Saldos com usuários associados"
+                        >
+                            <tbody>
+                                {% for row in counterparty_rows %}
+                                    <tr>
+                                        <td>
+                                            {% if row.balance < 0 %}
+                                                Você deve pagar
+                                                <span class="text-danger">
+                                                    R$ {{ row.amount|floatformat:2 }}
+                                                </span>
+                                                à {{ row.name }}
+                                            {% elif row.balance > 0 %}
+                                                Você deve receber
+                                                <span class="text-success">
+                                                    R$ {{ row.amount|floatformat:2 }}
+                                                </span>
+                                                de {{ row.name }}
+                                            {% else %}
+                                                Você não tem valores pendentes com
+                                                {{ row.name }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0" role="status">
+                        Não há outros usuários associados aos seus pagamentos neste mês.
+                    </div>
+                {% endif %}
+            </section>
         {% endif %}
     </section>
 
